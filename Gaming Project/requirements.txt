@@ -1,0 +1,29 @@
+# sudo apt update
+# xargs -a requirements.txt sudo apt install -y
+
+# Build tools
+build-essential
+cmake
+ninja-build
+git
+pkg-config
+
+# X11 and windowing
+libx11-dev
+libxrandr-dev
+libxcursor-dev
+libxi-dev
+libudev-dev
+
+# Graphics and fonts
+libfreetype6-dev
+libgl1-mesa-dev
+libdrm-dev
+
+# Audio
+libopenal-dev
+libflac-dev
+libvorbis-dev
+
+# Networking
+libssl-dev

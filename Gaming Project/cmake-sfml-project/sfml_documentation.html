@@ -1,0 +1,989 @@
+std::cout << "[SENDER] Sending messages to " << recipient << ":" << port << std::endl;
+std::cout << "Type messages to send (type 'exit' to quit):\n";
+
+std::string msg;
+while (std::getline(std::cin, msg)) {
+    if (msg == "exit") break;
+
+    sf::Socket::Status status = socket.send(msg.c_str(), msg.size(), recipient, port);
+    if (status != sf::Socket::Done) {
+        std::cerr << "[SENDER] Failed to send message.\n";
+    }
+}
+
+std::cout << "[SENDER] Exiting.\n";<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #f9f9f9;
+}
+
+h1 {
+  color: #1a73e8;
+  border-bottom: 3px solid #1a73e8;
+  padding-bottom: 10px;
+  margin-top: 30px;
+}
+
+h2 {
+  color: #1a73e8;
+  margin-top: 25px;
+  font-size: 1.4em;
+  border-left: 4px solid #1a73e8;
+  padding-left: 12px;
+}
+
+h3 {
+  color: #444;
+  margin-top: 18px;
+  font-size: 1.1em;
+  border-left: 4px solid #4285f4;
+  padding-left: 12px;
+}
+
+code {
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+pre {
+  background: #272822;
+  color: #f8f8f2;
+  padding: 15px;
+  border-radius: 5px;
+  overflow-x: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  line-height: 1.4;
+  border-left: 4px solid #1a73e8;
+}
+
+.section {
+  background: white;
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+  background: white;
+}
+
+table th {
+  background: #1a73e8;
+  color: white;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+}
+
+table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+table tr:hover {
+  background: #f5f5f5;
+}
+
+ul, ol {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+li {
+  margin: 8px 0;
+}
+
+.note {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 12px;
+  margin: 15px 0;
+  border-radius: 3px;
+  color: #856404;
+}
+
+.warning {
+  background: #f8d7da;
+  border-left: 4px solid #dc3545;
+  padding: 12px;
+  margin: 15px 0;
+  border-radius: 3px;
+  color: #721c24;
+}
+
+.highlight {
+  background: #e3f2fd;
+  border-left: 4px solid #1a73e8;
+  padding: 12px;
+  margin: 15px 0;
+  border-radius: 3px;
+}
+
+.toc {
+  background: #f0f4ff;
+  padding: 15px;
+  border-radius: 5px;
+  margin: 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.toc ul {
+  margin: 0;
+  padding-left: 20px;
+  columns: 2;
+}
+
+.toc a {
+  color: #1a73e8;
+  text-decoration: none;
+}
+
+.toc a:hover {
+  text-decoration: underline;
+}
+
+strong {
+  color: #1a73e8;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+
+<h1>SFML Complete Reference Guide</h1>
+
+<div class="toc">
+<strong>Quick Navigation</strong>
+<ul>
+<li><a href="#core">Core Concepts</a></li>
+<li><a href="#window">Window Management</a></li>
+<li><a href="#drawing">Drawing</a></li>
+<li><a href="#input">Input Handling</a></li>
+<li><a href="#sprites">Sprites & Textures</a></li>
+<li><a href="#text">Text & Fonts</a></li>
+<li><a href="#transforms">Transformations</a></li>
+<li><a href="#views">Views & Camera</a></li>
+<li><a href="#audio">Audio System</a></li>
+<li><a href="#networking">Networking</a></li>
+<li><a href="#compilation">Compilation</a></li>
+</ul>
+</div>
+
+<div id="core" class="section">
+<h2>Core Concepts</h2>
+
+<h3>Angles (sf::Angle)</h3>
+<ul>
+<li><strong>Unit-agnostic:</strong> Works with degrees or radians</li>
+<li><strong>Positive rotation:</strong> Clockwise</li>
+<li><strong>Coordinate system:</strong> X-axis = right, Y-axis = down</li>
+</ul>
+
+<pre>sf::Angle a1 = sf::degrees(180);
+sf::Angle a2 = sf::radians(3.1415f);
+
+a1 *= 2.f;              // 360°
+a2 = a1 + 0.5_rad;      // 388.6°
+a2 = -a2 / 3.f;         // -129.5°
+bool eq = (a1 == a2);   // false
+
+// Wrapping ranges
+sf::degrees(540).wrapUnsigned();        // 180°
+sf::radians(2 * 3.1415f).wrapSigned(); // 0°
+
+// User-defined literals
+using namespace sf::Literals;
+sf::Angle a = 45_deg + 3.1415_rad;     // 225°</pre>
+
+<h3>Time (sf::Time / sf::Clock)</h3>
+<p>Represents durations in microseconds, milliseconds, or seconds. Compatible with std::chrono.</p>
+
+<pre>sf::Time t1 = sf::microseconds(10000);
+sf::Time t2 = sf::milliseconds(10);
+sf::Time t3 = sf::seconds(0.01f);
+
+sf::Time sum = t1 + t2;   // ops: +, -, *, /
+bool eq = (t1 == t2);
+
+// Elapsed time
+sf::Clock clock;
+auto elapsed = clock.getElapsedTime();
+std::cout << elapsed.asSeconds();
+clock.restart();
+
+// Game loop timing
+sf::Clock clock;
+while (window.isOpen()) {
+    sf::Time dt = clock.restart();
+    updateGame(dt);
+}</pre>
+
+<h3>Resource Loading (Streams)</h3>
+<p>SFML resources can load from:</p>
+<ul>
+<li>File: <code>loadFromFile()</code></li>
+<li>Memory: <code>loadFromMemory()</code></li>
+<li>Custom stream: <code>loadFromStream()</code></li>
+</ul>
+
+<p><strong>sf::InputStream interface:</strong></p>
+<pre>class InputStream {
+public:
+    virtual std::optional&lt;std::size_t&gt; read(void* data, std::size_t size) = 0;
+    virtual std::optional&lt;std::size_t&gt; seek(std::size_t pos) = 0;
+    virtual std::optional&lt;std::size_t&gt; tell() = 0;
+    virtual std::optional&lt;std::size_t&gt; getSize() = 0;
+};
+
+// Example
+sf::FileInputStream stream("image.png");
+sf::Texture tex;
+tex.loadFromStream(stream);</pre>
+
+<div class="warning">
+<strong>Common Pitfalls:</strong>
+<ul>
+<li>Resources like sf::Music and sf::Font keep reading while in use → stream must stay alive</li>
+<li>Don't return raw results from fseek—return the actual new position</li>
+</ul>
+</div>
+</div>
+
+<div id="window" class="section">
+<h2>Window Management</h2>
+
+<h3>Opening a Window</h3>
+
+<pre>#include &lt;SFML/Window.hpp&gt;
+
+int main() {
+    sf::Window window(sf::VideoMode(800, 600), "My Window");
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+    }
+}</pre>
+
+<h3>Window Parameters</h3>
+
+<table>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+<tr>
+<td>VideoMode</td>
+<td>Window size & resolution</td>
+<td>sf::VideoMode(800, 600)</td>
+</tr>
+<tr>
+<td>Get Desktop Mode</td>
+<td>Get screen resolution</td>
+<td>sf::VideoMode::getDesktopMode()</td>
+</tr>
+<tr>
+<td>Title</td>
+<td>Window title bar text</td>
+<td>"My Application"</td>
+</tr>
+<tr>
+<td>Style::None</td>
+<td>Bare window (no border or title)</td>
+<td>sf::Style::None</td>
+</tr>
+<tr>
+<td>Style::Titlebar</td>
+<td>Adds a title bar</td>
+<td>sf::Style::Titlebar</td>
+</tr>
+<tr>
+<td>Style::Resize</td>
+<td>Resizable + maximize button</td>
+<td>sf::Style::Resize</td>
+</tr>
+<tr>
+<td>Style::Close</td>
+<td>Close button</td>
+<td>sf::Style::Close</td>
+</tr>
+<tr>
+<td>Style::Default</td>
+<td>Titlebar + Resize + Close</td>
+<td>sf::Style::Default</td>
+</tr>
+<tr>
+<td>Style::Fullscreen</td>
+<td>Fullscreen mode</td>
+<td>sf::Style::Fullscreen</td>
+</tr>
+</table>
+
+<h3>Window Functions</h3>
+
+<pre>window.setPosition({10, 50});           // Move window
+window.setSize({640, 480});             // Resize window
+window.setTitle("New Title");           // Change title
+
+sf::Vector2u size = window.getSize();   // Get current size
+bool focus = window.hasFocus();         // Check focus state</pre>
+
+<h3>Framerate Control</h3>
+
+<pre>// Vertical sync (uses monitor refresh)
+window.setVerticalSyncEnabled(true);
+
+// Manual framerate cap
+window.setFramerateLimit(60);</pre>
+
+<div class="note">
+Don't use both VSync and framerate limit at the same time.
+</div>
+
+<h3>Event Loop</h3>
+<p>Always include an event loop, otherwise the window becomes unresponsive.</p>
+
+<pre>sf::Event event;
+while (window.pollEvent(event)) {
+    if (event.type == sf::Event::Closed)
+        window.close();
+    else if (event.type == sf::Event::Resized)
+        std::cout << "New size: " << event.size.width << "x" 
+                  << event.size.height << "\n";
+    else if (event.type == sf::Event::KeyPressed && 
+             event.key.code == sf::Keyboard::Escape)
+        window.close();
+}</pre>
+</div>
+
+<div id="drawing" class="section">
+<h2>Drawing</h2>
+
+<h3>Render Window Setup</h3>
+
+<p>Use <code>sf::RenderWindow</code> (derived from <code>sf::Window</code>) to draw graphics:</p>
+
+<pre>#include &lt;SFML/Graphics.hpp&gt;
+
+int main() {
+    sf::RenderWindow window(sf::VideoMode({800, 600}), "My window");
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+
+        window.clear(sf::Color::Black);
+        // Draw entities here
+        window.display();
+    }
+}</pre>
+
+<div class="highlight">
+<strong>Remember the order:</strong> clear() → draw() → display()
+</div>
+
+<h3>Key Functions</h3>
+<ul>
+<li><strong>clear():</strong> Clears the window with a chosen color</li>
+<li><strong>draw():</strong> Draws a drawable object to the window</li>
+<li><strong>display():</strong> Shows the drawn content using double-buffering</li>
+</ul>
+
+<h3>Drawable Entities</h3>
+
+<pre>// Circle
+sf::CircleShape circle(50.f);  // radius 50
+circle.setFillColor(sf::Color::Green);
+circle.setPosition(400.f, 300.f);
+window.draw(circle);
+
+// Rectangle
+sf::RectangleShape rectangle(sf::Vector2f(100.f, 50.f));
+rectangle.setFillColor(sf::Color::Blue);
+rectangle.setPosition(350.f, 500.f);
+window.draw(rectangle);
+
+// Text
+sf::Font font;
+font.loadFromFile("arial.ttf");
+sf::Text text("Hello SFML!", font, 30);
+text.setFillColor(sf::Color::White);
+text.setPosition(300.f, 50.f);
+window.draw(text);
+
+// Sprite
+sf::Texture texture;
+texture.loadFromFile("image.png");
+sf::Sprite sprite(texture);
+sprite.setPosition(200.f, 200.f);
+window.draw(sprite);</pre>
+
+<h3>Off-Screen Drawing (RenderTexture)</h3>
+
+<pre>sf::RenderTexture renderTexture;
+renderTexture.create(200, 200);
+
+renderTexture.clear(sf::Color::Red);
+renderTexture.draw(circle);
+renderTexture.display();
+
+sf::Sprite sprite(renderTexture.getTexture());
+sprite.setPosition(300.f, 300.f);
+window.draw(sprite);</pre>
+
+<h3>Animation and Movement</h3>
+
+<pre>circle.move(0.1f, 0.f);   // move right
+circle.rotate(1.f);       // rotate
+
+// Use sf::Clock for frame-independent movement
+sf::Clock clock;
+while (window.isOpen()) {
+    sf::Time dt = clock.restart();
+    float speed = 100.f; // pixels per second
+    circle.move(speed * dt.asSeconds(), 0.f);
+}</pre>
+
+<h3>Multi-threaded Rendering (Advanced)</h3>
+
+<pre>void renderingThread(sf::RenderWindow* window) {
+    window->setActive(true);
+    while (window->isOpen()) {
+        // draw...
+        window->display();
+    }
+}
+
+int main() {
+    sf::RenderWindow window(sf::VideoMode({800, 600}), "OpenGL");
+    window.setActive(false);
+    std::thread thread(&renderingThread, &window);
+
+    while (window.isOpen()) {
+        // handle events...
+    }
+
+    thread.join();
+}</pre>
+
+<div class="note">
+Window creation and event handling must stay in the main thread. Activate the window context before drawing in a secondary thread.
+</div>
+</div>
+
+<div id="input" class="section">
+<h2>Input Handling</h2>
+
+<h3>Keyboard Events</h3>
+
+<p><strong>KeyPressed and KeyReleased:</strong></p>
+<ul>
+<li>Holding a key generates multiple KeyPressed events</li>
+<li>KeyReleased is never repeated</li>
+<li>Disable key repeat: <code>window.setKeyRepeatEnabled(false)</code></li>
+</ul>
+
+<pre>if (const auto* keyPressed = event->getIf&lt;sf::Event::KeyPressed&gt;()) {
+    if (keyPressed->scancode == sf::Keyboard::Scan::Escape) {
+        std::cout << "Escape pressed\n";
+        std::cout << "scancode: " << static_cast&lt;int&gt;(keyPressed->scancode) << "\n";
+        std::cout << "code: " << static_cast&lt;int&gt;(keyPressed->code) << "\n";
+        std::cout << "control: " << keyPressed->control << "\n";
+        std::cout << "alt: " << keyPressed->alt << "\n";
+        std::cout << "shift: " << keyPressed->shift << "\n";
+        std::cout << "system: " << keyPressed->system << "\n";
+    }
+}</pre>
+
+<div class="note">
+<strong>Scancodes vs Key Codes:</strong>
+<ul>
+<li>Scancodes: Physical key position (independent of layout)</li>
+<li>Key codes: Logical character based on keyboard layout</li>
+<li>Example: Key left of X is Z on US keyboards but Y on German layouts</li>
+<li>Best practice: Use scancodes for gameplay controls (WASD), key codes for text input</li>
+</ul>
+</div>
+
+<p><strong>Real-time input (smooth movement):</strong></p>
+<pre>if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+    character.move({-1.f, 0.f});</pre>
+
+<h3>Mouse Events</h3>
+
+<p><strong>MouseWheelScrolled:</strong></p>
+<pre>if (const auto* wheel = event->getIf&lt;sf::Event::MouseWheelScrolled&gt;()) {
+    if (wheel->wheel == sf::Mouse::Wheel::Vertical)
+        std::cout << "vertical scroll\n";
+    else
+        std::cout << "horizontal scroll\n";
+
+    std::cout << "delta: " << wheel->delta 
+              << " pos(" << wheel->position.x << ", " 
+              << wheel->position.y << ")\n";
+}</pre>
+
+<p><strong>MouseButtonPressed and MouseButtonReleased:</strong></p>
+<pre>if (const auto* mouseButton = event->getIf&lt;sf::Event::MouseButtonPressed&gt;()) {
+    if (mouseButton->button == sf::Mouse::Right)
+        std::cout << "Right button pressed at "
+                  << mouseButton->position.x << ", " 
+                  << mouseButton->position.y << "\n";
+}</pre>
+
+<p><strong>MouseMovedRaw (Windows & Linux only):</strong></p>
+<pre>if (const auto* movedRaw = event->getIf&lt;sf::Event::MouseMovedRaw&gt;()) {
+    std::cout << "Raw delta: (" << movedRaw->delta.x << ", " 
+              << movedRaw->delta.y << ")\n";
+}</pre>
+
+<p><strong>MouseEntered and MouseLeft:</strong></p>
+<pre>if (event->is&lt;sf::Event::MouseEntered&gt;())
+    std::cout << "Cursor entered window\n";
+
+if (event->is&lt;sf::Event::MouseLeft&gt;())
+    std::cout << "Cursor left window\n";</pre>
+
+<p><strong>Real-time mouse input:</strong></p>
+<pre>if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+    gun.fire();
+
+sf::Vector2i global = sf::Mouse::getPosition();
+sf::Vector2i local = sf::Mouse::getPosition(window);</pre>
+
+<h3>Joystick Events</h3>
+
+<p><strong>JoystickButtonPressed and JoystickButtonReleased:</strong></p>
+<ul>
+<li>Supports up to 8 joysticks, each with 32 buttons</li>
+</ul>
+
+<pre>if (const auto* joyBtn = event->getIf&lt;sf::Event::JoystickButtonPressed&gt;()) {
+    std::cout << "Joystick " << joyBtn->joystickId
+              << " pressed button " << joyBtn->button << "\n";
+}</pre>
+
+<p><strong>JoystickMoved:</strong></p>
+<pre>if (const auto* joyMoved = event->getIf&lt;sf::Event::JoystickMoved&gt;()) {
+    if (joyMoved->axis == sf::Joystick::X)
+        std::cout << "Joystick " << joyMoved->joystickId
+                  << " moved X to " << joyMoved->position << "\n";
+}</pre>
+
+<div class="note">
+Axes: X, Y, Z, R, U, V, POV X, POV Y. Range: -100 to 100. Change sensitivity with <code>window.setJoystickThreshold()</code>
+</div>
+
+<p><strong>JoystickConnected and JoystickDisconnected:</strong></p>
+<pre>if (const auto* joyConn = event->getIf&lt;sf::Event::JoystickConnected&gt;())
+    std::cout << "Joystick " << joyConn->joystickId << " connected\n";</pre>
+
+<p><strong>Real-time joystick input:</strong></p>
+<pre>if (sf::Joystick::isConnected(0)) {
+    if (sf::Joystick::isButtonPressed(0, 1))
+        gun.fire();
+    
+    float x = sf::Joystick::getAxisPosition(0, sf::Joystick::X);
+    float y = sf::Joystick::getAxisPosition(0, sf::Joystick::Y);
+    character.move({x, y});
+}</pre>
+</div>
+
+<div id="sprites" class="section">
+<h2>Sprites & Textures</h2>
+
+<h3>Loading Textures</h3>
+
+<pre>sf::Texture texture;
+if (!texture.loadFromFile("image.png")) {
+    // handle error
+}
+
+// Load sub-rectangle of an image
+sf::Texture texture;
+texture.loadFromFile("image.png", false, sf::IntRect({10, 10}, {32, 32}));
+
+// Create empty texture and update later
+sf::Texture texture({200, 200});  // width x height
+
+// Update pixels
+std::vector&lt;std::uint8_t&gt; pixels(width * height * 4);
+texture.update(pixels.data());
+
+// Update from image
+sf::Image image;
+texture.update(image);
+
+// Update from window
+sf::RenderWindow window;
+texture.update(window);</pre>
+
+<h3>Texture Properties</h3>
+
+<pre>// Smoothing: reduces pixelation when scaling
+texture.setSmooth(true);
+
+// Repeated: tiles the texture when sprite is larger than texture
+texture.setRepeated(true);</pre>
+
+<h3>Creating and Using Sprites</h3>
+
+<pre>sf::Sprite sprite(texture);
+window.draw(sprite);
+
+// Texture rectangle (partial texture)
+sprite.setTextureRect(sf::IntRect({10, 10}, {32, 32}));
+
+// Color modulation (including transparency)
+sprite.setColor(sf::Color(0, 255, 0));           // green
+sprite.setColor(sf::Color(255, 255, 255, 128));  // semi-transparent</pre>
+
+<h3>Sprite Transformations</h3>
+
+<pre>// Position
+sprite.setPosition({10.f, 50.f});
+sprite.move({5.f, 10.f});
+
+// Rotation
+sprite.setRotation(sf::degrees(90));
+sprite.rotate(sf::degrees(14));
+
+// Scale
+sprite.setScale({0.5f, 2.f});
+sprite.scale({1.5f, 3.f});
+
+// Origin (reference point for transformations)
+sprite.setOrigin({25.f, 25.f});</pre>
+
+<div class="warning">
+<strong>Common Problem: White square instead of sprite</strong><br>
+This occurs when the texture is destroyed while the sprite still uses it. Keep textures alive by storing them in a vector or class member.
+</div>
+
+<pre>// Bad
+sf::Sprite loadSprite(const std::string& file) {
+    sf::Texture texture;
+    texture.loadFromFile(file);
+    return sf::Sprite(texture); // ERROR: texture destroyed here
+}
+
+// Good
+std::vector&lt;sf::Texture&gt; textures;
+textures.emplace_back("image.png");
+sf::Sprite sprite(textures.back());</pre>
+
+<h3>Using sf::Texture with OpenGL</h3>
+
+<pre>sf::Texture texture;
+// bind for OpenGL drawing
+sf::Texture::bind(&texture);
+// draw OpenGL entities...
+sf::Texture::bind(nullptr); // unbind</pre>
+</div>
+
+<div id="text" class="section">
+<h2>Text & Fonts</h2>
+
+<h3>Loading Fonts</h3>
+
+<pre>// Method 1: Using constructor (throws exception on error)
+sf::Font font("arial.ttf");
+
+// Method 2: Using function (returns bool)
+sf::Font font;
+if (!font.openFromFile("arial.ttf")) {
+    // error...
+}</pre>
+
+<div class="note">
+SFML doesn't load system fonts automatically. You must include font files with your application. Font files should be .ttf (TrueType) files.
+</div>
+
+<p><strong>Other loading methods:</strong></p>
+<ul>
+<li><code>openFromMemory()</code> - Load from raw memory</li>
+<li><code>openFromStream()</code> - Load from custom input stream</li>
+</ul>
+
+<h3>Drawing Text</h3>
+
+<pre>sf::Text text;
+text.setFont(font);
+
+// Set the string to display
+text.setString("Hello world");
+
+// Set the character size
+text.setCharacterSize(24); // in pixels, not points!
+
+// Set the color
+text.setFillColor(sf::Color::Red);
+
+// Set the text style
+text.setStyle(sf::Text::Bold | sf::Text::Underlined);
+
+// inside the main loop, between clear() and display()
+window.draw(text);</pre>
+
+<h3>Transformations</h3>
+
+<p>Text can be transformed like sprites:</p>
+<pre>text.setPosition(100.f, 50.f);
+text.setRotation(15.f);
+text.setScale(1.5f, 1.5f);</pre>
+
+<h3>Non-ASCII Characters</h3>
+
+<p>Handling non-ASCII characters (accented European, Arabic, Chinese, etc.) requires proper encoding:</p>
+
+<pre>// Use wide literal strings with L prefix
+text.setString(L"יטאח");  // Hebrew example
+text.setString(L"你好");   // Chinese example
+text.setString(L"Héllo"); // French with accents</pre>
+
+<div class="note">
+Make sure the font contains the characters you want to display. Not all fonts support all languages.
+</div>
+
+<h3>Advanced: Creating Custom Text Classes</h3>
+
+<pre>// Retrieve glyph texture
+const sf::Texture& texture = font.getTexture(characterSize);
+
+// Get glyph information
+sf::Glyph glyph = font.getGlyph(character, characterSize, bold);
+// glyph.advance - horizontal offset for next glyph
+// glyph.bounds - bounding rectangle
+// glyph.textureRect - texture coordinates
+
+// Font metrics
+float lineSpacing = font.getLineSpacing(characterSize);
+float kerning = font.getKerning(character1, character2, characterSize);</pre>
+
+<h3>Performance Tips</h3>
+
+<ul>
+<li>Reuse the same sf::Text object instead of creating new ones frequently</li>
+<li>Fonts and glyphs are cached by SFML, so repeated rendering is efficient</li>
+<li>Remember glyphs have bounding boxes - sometimes extra padding needed if letters get cropped</li>
+</ul>
+
+<h3>Complete Example</h3>
+
+<pre>#include &lt;SFML/Graphics.hpp&gt;
+
+int main() {
+    sf::RenderWindow window(sf::VideoMode(800, 600), "SFML Text Example");
+
+    sf::Font font;
+    if (!font.loadFromFile("arial.ttf")) {
+        return -1;
+    }
+
+    sf::Text text;
+    text.setFont(font);
+    text.setString(L"שלום, 世界!");
+    text.setCharacterSize(48);
+    text.setFillColor(sf::Color::Cyan);
+    text.setStyle(sf::Text::Bold | sf::Text::Italic);
+    text.setPosition(100.f, 200.f);
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+
+        window.clear();
+        window.draw(text);
+        window.display();
+    }
+
+    return 0;
+}</pre>
+</div>
+
+<div id="transforms" class="section">
+<h2>Transformations</h2>
+
+<h3>Overview</h3>
+
+<p>All SFML drawable entities (sf::Sprite, sf::Text, sf::Shape, etc.) inherit from sf::Transformable, which provides an easy interface for position, rotation, scale, and origin.</p>
+
+<h3>Basic Transforms</h3>
+
+<pre>// Position
+entity.setPosition(100.f, 50.f);
+entity.move(10.f, 5.f);
+
+// Rotation
+entity.setRotation(sf::degrees(45));
+entity.rotate(sf::degrees(10));
+
+// Scale
+entity.setScale(2.f, 1.f);
+entity.scale(0.5f, 0.5f);
+
+// Origin (reference point for transformations)
+entity.setOrigin(25.f, 25.f);</pre>
+
+<h3>Scene Graphs (Parent-Child Transforms)</h3>
+
+<p>A scene graph is a hierarchy of objects where child entities inherit transformations from their parent.</p>
+
+<pre>// Parent object
+sf::Sprite mario(marioTexture);
+mario.setPosition(200.f, 200.f);
+
+// Child object (attached to parent)
+sf::CircleShape hat(20.f);
+hat.setFillColor(sf::Color::Red);
+hat.setPosition(50.f, -20.f);  // relative to Mario's local origin
+
+// Render the scene
+window.draw(mario);
+
+// Apply Mario's transform to the child
+sf::RenderStates states;
+states.transform = mario.getTransform();
+window.draw(hat, states);
+// Hat moves and rotates with Mario!</pre>
+
+<h3>Interactive Scene Graph Example</h3>
+
+<pre>#include &lt;SFML/Graphics.hpp&gt;
+
+int main() {
+    sf::RenderWindow window(sf::VideoMode(800, 600), "Mario Scene Graph");
+
+    sf::Texture marioTexture;
+    if (!marioTexture.loadFromFile("Mario.png"))
+        return -1;
+
+    sf::Sprite mario(marioTexture);
+    mario.setPosition(200.f, 200.f);
+
+    sf::CircleShape child(20.f);
+    child.setFillColor(sf::Color::Red);
+    child.setPosition(50.f, -20.f);
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+            mario.move(-2.f, 0.f);
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+            mario.move(2.f, 0.f);
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+            mario.move(0.f, -2.f);
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+            mario.move(0.f, 2.f);
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+            mario.rotate(-2.f);
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+            mario.rotate(2.f);
+
+        window.clear(sf::Color::Black);
+        window.draw(mario);
+
+        sf::RenderStates states;
+        states.transform = mario.getTransform();
+        window.draw(child, states);
+
+        window.display();
+    }
+}</pre>
+</div>
+
+<div id="views" class="section">
+<h2>Views & Camera</h2>
+
+<h3>What is a View?</h3>
+
+<p>In most 2D games, levels are much larger than the visible window. What you see on screen is only a portion of the total world. A <code>sf::View</code> represents a camera looking at your 2D world.</p>
+
+<div class="highlight">
+Think of a View as a movable, zoomable, and rotatable camera that determines what part of your world is visible.
+</div>
+
+<h3>Why Use a View?</h3>
+
+<p>You'll use a sf::View when you want to:</p>
+<ul>
+<li>Scroll or pan across a large map</li>
+<li>Zoom in/out on the world</li>
+<li>Rotate the camera view</li>
+<li>Create split-screen or mini-map effects</li>
+</ul>
+
+<h3>Defining a View</h3>
+
+<pre>// Create a view showing a 300x200 area starting from (200, 200)
+sf::View view1(sf::FloatRect({200.f, 200.f}, {300.f, 200.f}));
+
+// Or define using center + size
+sf::View view2({350.f, 300.f}, {300.f, 200.f});
+
+// Define or modify later
+sf::View view;
+view.setCenter({350.f, 300.f});
+view.setSize({300.f, 200.f});</pre>
+
+<h3>Moving (Scrolling) the View</h3>
+
+<p>Views are moved by their center, not their top-left corner:</p>
+
+<pre>// Set view center at (200, 200)
+view.setCenter({200.f, 200.f});
+
+// Move view by (100, 100)
+view.move({100.f, 100.f});  // Now at (300, 300)</pre>
+
+<h3>Rotating the View</h3>
+
+<pre>view.setRotation(sf::degrees(20));  // Set absolute rotation
+view.rotate(sf::degrees(5));        // Rotate relative</pre>
+
+<h3>Coordinate Conversion</h3>
+
+<p>Once you use a custom view, pixels on screen no longer directly match world coordinates:</p>
+
+<pre>// Get mouse position in window
+sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
+
+// Convert to world coordinates (accounting for active view)
+sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos);
+
+// Opposite conversion
+sf::Vector2i screenPos = window.mapCoordsToPixel(worldPos);

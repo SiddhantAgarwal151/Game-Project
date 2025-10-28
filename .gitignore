@@ -1,0 +1,8 @@
+build
+out
+.cache
+.idea
+.vs
+.vscode
+cmake-3.28.6
+cmake-3.28.6.tar.gz
