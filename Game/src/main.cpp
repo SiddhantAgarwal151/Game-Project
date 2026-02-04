@@ -32,9 +32,11 @@ int main()
 
     // Create player early so we can generate placeholder sprites even in headless mode
     game::player::Player player;
-    bool playerLoaded = player.load("../assets/sprites/player.png");
+    bool playerLoaded = player.load("assets/sprites/link_64x64_spritesheet.png", {16, 16}, 4);
     if (!playerLoaded) {
         std::cout << "Using generated placeholder player spritesheet.\n";
+    } else {
+        std::cout << "Successfully loaded Link walking animation sprite.\n";
     }
 
     if (!displayEnv) {

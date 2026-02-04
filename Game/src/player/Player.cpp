@@ -58,7 +58,14 @@ bool Player::load(const std::string& texturePath, const sf::Vector2i& frameSize,
 
     m_sprite.setTexture(m_texture);
     m_sprite.setTextureRect(sf::IntRect({0,0}, {m_frameSize.x, m_frameSize.y}));
-    m_sprite.setOrigin(sf::Vector2f(m_frameSize.x/2.f, m_frameSize.y/2.f));
+    m_sprite.setOrigin(sf::Vector2f(0.f, 0.f));
+    
+    // Debug output
+    sf::Vector2u texSize = m_texture.getSize();
+    std::cout << "Texture loaded: " << texturePath << " Size: " << texSize.x << "x" << texSize.y 
+              << " Frame size: " << m_frameSize.x << "x" << m_frameSize.y 
+              << " Frames per row: " << m_framesPerRow << "\n";
+    
     return true;
 }
 
@@ -78,15 +85,18 @@ void Player::handleInput()
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up)) dir.y -= 1.f;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down)) dir.y += 1.f;
 
+    // Store direction for sword attack
     if (dir.x != 0.f || dir.y != 0.f) {
-        m_state = State::Walk;
-        if (std::abs(dir.x) >= std::abs(dir.y)) {
-            m_directionCell.x = (dir.x < 0) ? 1 : 2; // left row=1, right row=2
-        } else {
-            m_directionCell.x = (dir.y < 0) ? 3 : 0; // up row=3, down row=0
+        m_lastDirection = dir;
+    }
+
+    // Attack on Space or LCtrl
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl)) {
+        if (!m_isAttacking) {
+            m_isAttacking = true;
+            m_attackTimer = sf::Time::Zero;
+            m_state = State::Attack;
         }
-    } else {
-        m_state = State::Idle;
     }
 }
 
@@ -98,34 +108,93 @@ void Player::update(const sf::Time& dt)
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up)) move.y -= 1.f;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down)) move.y += 1.f;
 
-    if (move.x != 0.f || move.y != 0.f) {
-        m_state = State::Walk;
-        const float len = std::sqrt(move.x*move.x + move.y*move.y);
-        if (len > 0.f) move /= len;
-        m_position += move * m_speed * dt.asSeconds();
-    } else {
-        m_state = State::Idle;
-    }
-
-    if (m_state == State::Walk) {
-        m_frameAcc += dt;
-        if (m_frameAcc >= m_frameTime) {
-            m_frameAcc -= m_frameTime;
-            m_currentFrame = (m_currentFrame + 1) % m_framesPerRow;
+    if (!m_isAttacking) {
+        if (move.x != 0.f || move.y != 0.f) {
+            m_state = State::Walk;
+            // Update direction based on movement
+            // Row mapping: 0=down, 1=up, 2=right, 3=left
+            if (std::abs(move.x) >= std::abs(move.y)) {
+                m_directionCell.x = (move.x < 0) ? 3 : 2; // left row=3, right row=2
+            } else {
+                m_directionCell.x = (move.y < 0) ? 1 : 0; // up row=1, down row=0
+            }
+            
+            const float len = std::sqrt(move.x*move.x + move.y*move.y);
+            if (len > 0.f) move /= len;
+            m_position += move * m_speed * dt.asSeconds();
+            
+            // Update animation frame
+            m_frameAcc += dt;
+            if (m_frameAcc >= m_frameTime) {
+                m_frameAcc -= m_frameTime;
+                m_currentFrame = (m_currentFrame + 1) % m_framesPerRow;
+            }
+        } else {
+            m_state = State::Idle;
+            m_currentFrame = 0;
+            m_frameAcc = sf::Time::Zero;
         }
     } else {
+        // Update attack timer
+        m_attackTimer += dt;
+        if (m_attackTimer >= m_attackDuration) {
+            m_isAttacking = false;
+            m_attackTimer = sf::Time::Zero;
+            m_state = State::Idle;
+        }
         m_currentFrame = 0;
     }
 
-    int left = static_cast<int>(m_currentFrame) * m_frameSize.x;
-    int top = static_cast<int>(m_directionCell.x) * m_frameSize.y;
+    // Ensure direction cell is valid (default to down if somehow invalid)
+    if (m_directionCell.x < 0 || m_directionCell.x > 3) {
+        m_directionCell.x = 0;
+    }
+
+    // Clamp frame to valid range
+    if (m_currentFrame >= m_framesPerRow) {
+        m_currentFrame = 0;
+    }
+
+    int left = m_currentFrame * m_frameSize.x;
+    int top = m_directionCell.x * m_frameSize.y;
+    
     m_sprite.setTextureRect(sf::IntRect({left, top}, {m_frameSize.x, m_frameSize.y}));
     m_sprite.setPosition(m_position);
+
+    // Debug output (print once per second)
+    static sf::Clock debugClock;
+    if (debugClock.getElapsedTime().asSeconds() > 1.f) {
+        std::cout << "Frame: " << m_currentFrame << " Dir: " << m_directionCell.x 
+                  << " Left: " << left << " Top: " << top 
+                  << " FrameSize: " << m_frameSize.x << "x" << m_frameSize.y << "\n";
+        debugClock.restart();
+    }
+
+    // Update sword position and rotation (don't modify m_lastDirection)
+    sf::Vector2f swordDir = m_lastDirection;
+    float len = std::sqrt(swordDir.x * swordDir.x + swordDir.y * swordDir.y);
+    if (len > 0.f) {
+        swordDir /= len;
+    }
+
+    float angle = std::atan2(swordDir.y, swordDir.x) * 180.f / 3.14159f;
+
+    // Create sword shape (triangle)
+    m_sword.setPointCount(3);
+    m_sword.setPoint(0, sf::Vector2f(m_swordDistance, 0.f));      // tip
+    m_sword.setPoint(1, sf::Vector2f(0.f, -8.f));                 // left
+    m_sword.setPoint(2, sf::Vector2f(0.f, 8.f));                  // right
+    m_sword.setFillColor(sf::Color(200, 200, 200, m_isAttacking ? 255 : 0));
+    m_sword.setPosition(m_position);
+    m_sword.setRotation(sf::degrees(angle));
 }
 
 void Player::draw(sf::RenderTarget& target) const
 {
     target.draw(m_sprite);
+    if (m_isAttacking) {
+        target.draw(m_sword);
+    }
 }
 
 } // namespace game::player

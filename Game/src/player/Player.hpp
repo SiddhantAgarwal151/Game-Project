@@ -28,14 +28,22 @@ private:
     float m_speed = 140.f; // px / sec
 
     // animation
-    sf::Vector2i m_frameSize{32,32};
-    unsigned int m_framesPerRow = 3;
+    sf::Vector2i m_frameSize{16,16};
+    unsigned int m_framesPerRow = 4;
     unsigned int m_currentFrame = 0;
-    sf::Time m_frameTime = sf::seconds(0.12f);
+    sf::Time m_frameTime = sf::seconds(0.04f);
     sf::Time m_frameAcc = sf::Time::Zero;
 
     State m_state = State::Idle;
     sf::Vector2i m_directionCell{0,0}; // row, col
+
+    // sword attack
+    sf::ConvexShape m_sword;
+    bool m_isAttacking = false;
+    sf::Time m_attackDuration = sf::seconds(0.3f);
+    sf::Time m_attackTimer = sf::Time::Zero;
+    sf::Vector2f m_lastDirection{0.f, 1.f}; // default facing down
+    float m_swordDistance = 32.f; // covers same distance as character size
 };
 
 } // namespace game::player
