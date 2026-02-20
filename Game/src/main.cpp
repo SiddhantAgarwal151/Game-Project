@@ -6,7 +6,36 @@
 #include <cstdlib>
 #include <vector>
 #include "player/Player.hpp"
-#include "entities/enemies/Octorok.hpp"  // Changed from "enemies/" to "entities/enemies/"
+#include "entities/enemies/Octorok.hpp"
+#include "world/World.hpp"
+#include "world/Camera.hpp"
+#include "audio/SoundManager.hpp"
+
+// Helper: wire up all sound callbacks for a player instance
+static void connectPlayerSounds(game::player::Player& player, game::audio::SoundManager& soundManager)
+{
+    player.setOnWalkStartCallback([&soundManager]() {
+        soundManager.playLoopingSound(game::audio::SoundEffect::PlayerWalk, 50.f);
+    });
+
+    player.setOnWalkStopCallback([&soundManager]() {
+        soundManager.stopLoopingSound(game::audio::SoundEffect::PlayerWalk);
+    });
+
+    player.setOnAttackCallback([&soundManager]() {
+        soundManager.playSound(game::audio::SoundEffect::PlayerAttack, 70.f);
+    });
+
+    player.setOnHitCallback([&soundManager]() {
+        soundManager.playSound(game::audio::SoundEffect::PlayerHit, 80.f);
+    });
+
+    player.setOnDeathCallback([&soundManager]() {
+        soundManager.stopLoopingSound(game::audio::SoundEffect::PlayerWalk);
+        soundManager.playSound(game::audio::SoundEffect::GameOver, 100.f);
+        soundManager.stopMusic();
+    });
+}
 
 int main()
 {
@@ -36,27 +65,63 @@ int main()
         }
     }
     
+    // CREATE SOUND MANAGER
+    game::audio::SoundManager soundManager;
+    
+    // Load sound effects
+    soundManager.loadSound(game::audio::SoundEffect::PlayerWalk,   "assets/sounds/walk.wav");
+    soundManager.loadSound(game::audio::SoundEffect::PlayerAttack, "assets/sounds/sword_attack.wav");
+    soundManager.loadSound(game::audio::SoundEffect::PlayerHit,    "assets/sounds/hit.wav");
+    soundManager.loadSound(game::audio::SoundEffect::EnemyHit,     "assets/sounds/enemy_hit.wav");
+    soundManager.loadSound(game::audio::SoundEffect::EnemyDeath,   "assets/sounds/enemy_death.wav");
+    soundManager.loadSound(game::audio::SoundEffect::GameOver,     "assets/sounds/game_over.wav");
+    
+    // Load and start background music
+    soundManager.loadMusic(game::audio::Music::MainTheme, "assets/music/background.ogg");
+    soundManager.playMusic(game::audio::Music::MainTheme, true, 30.f);
+    
     game::player::Player player;
     player.load("assets/sprites/link_64x64_spritesheet.png", {16, 16}, 4);
+    connectPlayerSounds(player, soundManager);
     
     if (!displayEnv) {
         std::cout << "No DISPLAY detected\n";
         return 0;
     }
     
-    sf::RenderWindow window(sf::VideoMode({800u, 600u}), "Game - Combat System");
+    sf::RenderWindow window(sf::VideoMode({800u, 600u}), "Game - Open World");
     window.setVerticalSyncEnabled(true);
     
+    // Create world (50x50 tiles, each 32px)
+    game::world::World world(50, 50, 32.f);
+    world.generate();
+    world.loadBackgroundTexture("assets/backgrounds/grass_bg.png");
+    world.loadTileset("assets/tilesets/terrain.png", {32, 32});
+    
+    // Create camera
+    game::world::Camera camera(sf::Vector2f(800.f, 600.f), world.getWorldBounds());
+    
     sf::Clock clock;
-    player.setPosition({400.f, 300.f});
     
-    // CREATE ENEMIES
+    // Spawn player in center of world
+    sf::Vector2f worldCenter(
+        world.getWorldBounds().size.x / 2.f,
+        world.getWorldBounds().size.y / 2.f
+    );
+    player.setPosition(worldCenter);
+    
+    // CREATE ENEMIES scattered around the world
     std::vector<std::shared_ptr<game::enemies::Octorok>> enemies;
-    enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{200.f, 150.f}));
-    enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{600.f, 150.f}));
-    enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{200.f, 450.f}));
-    enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{600.f, 450.f}));
-    
+    auto spawnEnemies = [&enemies]() {
+        enemies.clear();
+        enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{ 400.f, 300.f}));
+        enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{ 600.f, 400.f}));
+        enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{ 800.f, 500.f}));
+        enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{ 300.f, 600.f}));
+        enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{1000.f, 400.f}));
+    };
+    spawnEnemies();
+
     // Game Over screen
     sf::RectangleShape gameOverOverlay({800.f, 600.f});
     gameOverOverlay.setFillColor(sf::Color(0, 0, 0, 200));
@@ -89,10 +154,14 @@ int main()
     {
         sf::Time dt = clock.restart();
         
+        // Update sound manager (cleans up finished one-shot sounds)
+        soundManager.update();
+        
         while (const auto ev = window.pollEvent())
         {
             if (ev->is<sf::Event::Closed>())
                 window.close();
+
             if (auto key = ev->getIf<sf::Event::KeyPressed>())
             {
                 if (key->code == sf::Keyboard::Key::Escape)
@@ -100,15 +169,15 @@ int main()
                     
                 if (gameOver && key->code == sf::Keyboard::Key::Space) {
                     gameOver = false;
+                    
+                    soundManager.playMusic(game::audio::Music::MainTheme, true, 30.f);
+                    
                     player = game::player::Player();
                     player.load("assets/sprites/link_64x64_spritesheet.png", {16, 16}, 4);
-                    player.setPosition({400.f, 300.f});
-                    
-                    enemies.clear();
-                    enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{200.f, 150.f}));
-                    enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{600.f, 150.f}));
-                    enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{200.f, 450.f}));
-                    enemies.push_back(std::make_shared<game::enemies::Octorok>(sf::Vector2f{600.f, 450.f}));
+                    player.setPosition(worldCenter);
+                    connectPlayerSounds(player, soundManager);
+
+                    spawnEnemies();
                 }
             }
         }
@@ -122,7 +191,16 @@ int main()
             player.handleInput();
             player.update(dt);
             
-            // Get sword bounds for collision
+            // Check world collision before committing movement
+            sf::FloatRect playerBounds = player.getBounds();
+            playerBounds.position = player.getPendingPosition() - sf::Vector2f(playerBounds.size.x / 2.f, playerBounds.size.y / 2.f);
+            
+            if (!world.checkCollision(playerBounds)) {
+                player.commitPosition();
+            }
+            
+            camera.update(player.getPosition());
+            
             sf::FloatRect swordBounds = player.getSwordBounds();
             
             for (auto& enemy : enemies) {
@@ -130,13 +208,16 @@ int main()
                     enemy->updateAI(player.getPosition());
                     enemy->update(dt);
                     
-                    // Check sword collision with enemy
                     if (player.isAttacking() && 
                         swordBounds.findIntersection(enemy->getBounds()).has_value()) {
-                        enemy->takeDamage(1.f);  // 1 damage per hit
+                        enemy->takeDamage(1.f);
+                        soundManager.playSound(game::audio::SoundEffect::EnemyHit, 25.f);
+                        
+                        if (!enemy->isAlive()) {
+                            soundManager.playSound(game::audio::SoundEffect::EnemyDeath, 70.f);
+                        }
                     }
                     
-                    // Check projectile collisions with player
                     auto& projectiles = enemy->getProjectiles();
                     for (auto& projectile : projectiles) {
                         if (projectile->isAlive() && 
@@ -164,12 +245,16 @@ int main()
         window.clear(sf::Color::Black);
         
         if (gameOver) {
+            window.setView(window.getDefaultView());
             window.draw(gameOverOverlay);
             if (gameOverText && tryAgainText) {
                 window.draw(*gameOverText);
                 window.draw(*tryAgainText);
             }
         } else {
+            camera.apply(window);
+            world.draw(window, camera.getViewBounds());
+            
             for (const auto& enemy : enemies) {
                 if (enemy->isAlive()) {
                     enemy->draw(window);
@@ -178,6 +263,7 @@ int main()
             
             player.draw(window);
             
+            window.setView(window.getDefaultView());
             if (fpsText) window.draw(*fpsText);
         }
         
